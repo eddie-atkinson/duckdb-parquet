@@ -1,0 +1,23 @@
+{
+  "name": "duckdb-parquet",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@duckdb/duckdb-wasm": "^1.27.0",
+    "@duckdb/react-duckdb": "^1.27.0",
+    "@preact/compat": "^17.1.2",
+    "immutable": "5.0.0-beta.2",
+    "preact": "^10.16.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.5.0",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5"
+  }
+}
