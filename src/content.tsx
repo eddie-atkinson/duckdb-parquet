@@ -1,10 +1,12 @@
 import { DuckDBDataProtocol } from "@duckdb/duckdb-wasm";
-import { ChangeEvent } from "preact/compat";
+import { ChangeEvent, useRef, useState } from "preact/compat";
 import { useDBConnection } from "./hooks/useDBConnection";
+import { Input } from "./components/ui/input";
+import { Button } from "./components/ui/button";
 
 export const Content = () => {
   const { db, loading, connection } = useDBConnection();
-
+  const [queryData, setQueryData] = useState<any[]>([]);
   if (loading) {
     return <div>Waiting for DB to initialise</div>;
   }
@@ -29,21 +31,42 @@ export const Content = () => {
     );
   };
 
+  const queryRef = useRef<null | HTMLInputElement>(null);
+
+  const onQuery = async (e: ChangeEvent<HTMLFormElement, Event>) => {
+    e.preventDefault();
+    const queryString = queryRef.current?.value ?? "";
+    console.log(queryString);
+    const result = (await connection.query(queryString))
+      .toArray()
+      .map((r) => r.toJSON());
+    setQueryData(result);
+  };
+
   return (
-    <div>
-      <input type="text" />
-      <input type="file" accept=".parquet" onChange={fileChangeHandler} />
-      <button
-        onClick={() => {
-          console.log(
-            connection
-              .query(`SELECT * from data;`)
-              .then((res) => res.toArray().map((r) => r.toJSON()))
-          );
-        }}
-      >
-        Click me
-      </button>
+    <div className="flex flex-col p-10 gap-2">
+      <form onSubmit={onQuery}>
+        <div className="flex justify-center space-x-2">
+          <Input type="text" name="query" className="input" ref={queryRef} />
+          <Button type="submit">Query</Button>
+        </div>
+      </form>
+      <Input
+        className="max-w-sm"
+        type="file"
+        accept=".parquet"
+        onChange={fileChangeHandler}
+        label="Run a query"
+      />
+      <div>
+        <pre>
+          {JSON.stringify(
+            queryData,
+            (_, v) => (typeof v === "bigint" ? v.toString() : v),
+            2
+          )}
+        </pre>
+      </div>
     </div>
   );
 };
