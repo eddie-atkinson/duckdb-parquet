@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@apache-arrow/ts": "^13.0.0",
     "@duckdb/duckdb-wasm": "^1.27.0",
     "@duckdb/react-duckdb": "^1.27.0",
     "@preact/compat": "^17.1.2",
