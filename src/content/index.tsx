@@ -1,13 +1,14 @@
 import { DuckDBDataProtocol } from "@duckdb/duckdb-wasm";
 import { ChangeEvent, useRef, useState } from "preact/compat";
 import * as arrow from "@apache-arrow/ts";
-import { useDBConnection } from "./hooks/useDBConnection";
-import { Input } from "./components/ui/input";
-import { Button } from "./components/ui/button";
+import { useDBConnection } from "@/hooks/useDBConnection";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Downloader } from "./downloader";
 
 export const Content = () => {
   const { db, loading, connection } = useDBConnection();
-  const [queryData, setQueryData] = useState<any[]>([]);
+
   const [queryResult, setQueryResult] = useState<arrow.Table | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(0);
 
@@ -48,9 +49,6 @@ export const Content = () => {
 
   const nPages = queryResult?.batches.length;
   const nRows = queryResult?.numRows;
-
-  const writer = new arrow.RecordBatchWriter();
-  writer.write();
   console.log(queryResult);
 
   return (
@@ -59,9 +57,10 @@ export const Content = () => {
         <div className="flex justify-center space-x-2">
           <Input type="text" name="query" className="input" ref={queryRef} />
           <Button type="submit">Query</Button>
-          <Button onClick={() => {}}>Download</Button>
+          <Downloader queryRef={queryRef} />
         </div>
       </form>
+
       <Input
         className="max-w-sm"
         type="file"
