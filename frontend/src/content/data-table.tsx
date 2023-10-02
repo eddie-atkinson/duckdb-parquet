@@ -1,14 +1,14 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import * as arrow from "@apache-arrow/ts";
-import { FunctionComponent, Fragment, useState, useRef, useMemo } from "react";
 import {
+  ColumnDef,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
-  ColumnDef,
 } from "@tanstack/react-table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Fragment, FunctionComponent, useState } from "react";
 
 export interface DataTableProps {
   queryResult: arrow.Table | null;
