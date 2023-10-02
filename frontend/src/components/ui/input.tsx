@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { HTMLAttributes, forwardRef } from "preact/compat";
+import { h } from "preact";
 
 export interface InputProps extends HTMLAttributes<HTMLInputElement> {}
 

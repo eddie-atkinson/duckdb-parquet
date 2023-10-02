@@ -1,7 +1,8 @@
 import { Listbox, Transition } from "@headlessui/react";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import clsx from "clsx";
-import { ComponentType, Fragment, FunctionComponent } from "preact";
+import { ComponentType, Fragment } from "preact";
+import { h } from "preact";
 
 type ExtractProps<T> = T extends ComponentType<infer P> ? P : T;
 

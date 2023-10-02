@@ -1,5 +1,5 @@
 import { Select, SelectOption } from "@/components/ui/select";
-import { FunctionComponent } from "preact";
+import { FunctionComponent, h } from "preact";
 
 export type FileType = "csv" | "parquet";
 

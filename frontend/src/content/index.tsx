@@ -5,36 +5,19 @@ import { useDBConnection } from "@/hooks/useDBConnection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Downloader } from "./downloader";
+import { h } from "preact";
+import { DataTable } from "./data-table";
+import { FileUploader } from "./file-uploader";
 
 export const Content = () => {
-  const { db, loading, connection } = useDBConnection();
+  const { loading, connection } = useDBConnection();
 
   const [queryResult, setQueryResult] = useState<arrow.Table | null>(null);
-  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [currentPage] = useState<number>(0);
 
   if (loading) {
     return <div>Waiting for DB to initialise</div>;
   }
-
-  const fileChangeHandler = async (e: ChangeEvent<HTMLInputElement>) => {
-    const { files } = e.currentTarget;
-    if (!files || !files?.[0]?.name?.endsWith(".parquet")) {
-      return;
-    }
-    const [file] = files;
-
-    await db.registerFileHandle(
-      file.name,
-      file,
-      DuckDBDataProtocol.BROWSER_FILEREADER,
-      true
-    );
-
-    await connection.query(`DROP TABLE IF EXISTS data;`);
-    await connection.query(
-      `CREATE TABLE data AS SELECT * FROM read_parquet('${file.name}');`
-    );
-  };
 
   const queryRef = useRef<null | HTMLInputElement>(null);
 
@@ -44,6 +27,7 @@ export const Content = () => {
     console.log(queryString);
 
     const result = await connection.query(queryString);
+    // @ts-ignore
     setQueryResult(result);
   };
 
@@ -60,28 +44,11 @@ export const Content = () => {
           <Downloader queryRef={queryRef} />
         </div>
       </form>
-
-      <Input
-        className="max-w-sm"
-        type="file"
-        accept=".parquet"
-        onChange={fileChangeHandler}
-      />
+      <FileUploader />
       <div>
         N pages of results: {nPages} <hr /> N rows: {nRows}
       </div>
-      <div>
-        <pre>
-          {JSON.stringify(
-            queryResult?.batches
-              .at(currentPage)
-              ?.toArray()
-              .map((r) => r.toJSON()),
-            (_, v) => (typeof v === "bigint" ? v.toString() : v),
-            2
-          )}
-        </pre>
-      </div>
+      <DataTable queryResult={queryResult} />
     </div>
   );
 };
