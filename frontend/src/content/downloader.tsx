@@ -77,7 +77,7 @@ export const Downloader: FunctionComponent<DownloaderProps> = ({
     <>
       <FileTypeSelector
         value={fileType}
-        onChange={(v) => v && setFileType(v)}
+        onChange={(v) => v && ["csv", "parquet"].includes(v) && setFileType(v)}
       />
       <Button disabled={loading} onClick={handleFileDownload}>
         Download
