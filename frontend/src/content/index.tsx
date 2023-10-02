@@ -1,12 +1,10 @@
-import { DuckDBDataProtocol } from "@duckdb/duckdb-wasm";
-import { ChangeEvent, useRef, useState } from "preact/compat";
-import * as arrow from "@apache-arrow/ts";
-import { useDBConnection } from "@/hooks/useDBConnection";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Downloader } from "./downloader";
-import { h } from "preact";
+import { Input } from "@/components/ui/input";
+import { useDBConnection } from "@/hooks/useDBConnection";
+import * as arrow from "@apache-arrow/ts";
+import { FormEvent, useRef, useState } from "react";
 import { DataTable } from "./data-table";
+import { Downloader } from "./downloader";
 import { FileUploader } from "./file-uploader";
 
 export const Content = () => {
@@ -14,14 +12,13 @@ export const Content = () => {
 
   const [queryResult, setQueryResult] = useState<arrow.Table | null>(null);
   const [currentPage] = useState<number>(0);
+  const queryRef = useRef<null | HTMLInputElement>(null);
 
   if (loading) {
     return <div>Waiting for DB to initialise</div>;
   }
 
-  const queryRef = useRef<null | HTMLInputElement>(null);
-
-  const onQuery = async (e: ChangeEvent<HTMLFormElement, Event>) => {
+  const onQuery = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const queryString = queryRef.current?.value ?? "";
     console.log(queryString);

@@ -9,7 +9,6 @@ import {
   DuckDBPlatform,
   DuckDBProvider,
 } from "@duckdb/react-duckdb";
-import { h } from "preact";
 import { Content } from "./content";
 
 const DUCKDB_BUNDLES: duckdb.DuckDBBundles = {

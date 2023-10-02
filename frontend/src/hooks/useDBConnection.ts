@@ -1,6 +1,6 @@
 import { AsyncDuckDB, AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { useDuckDB, useDuckDBResolver } from "@duckdb/react-duckdb";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useState } from "react";
 
 const useDB = () => {
   const db = useDuckDB();

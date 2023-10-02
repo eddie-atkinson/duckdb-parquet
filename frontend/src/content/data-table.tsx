@@ -1,5 +1,5 @@
-import { Fragment, FunctionComponent, h } from "preact";
 import * as arrow from "@apache-arrow/ts";
+import { FunctionComponent, Fragment } from "react";
 
 export interface DataTableProps {
   queryResult: arrow.Table | null;
@@ -27,20 +27,20 @@ export const DataTable: FunctionComponent<DataTableProps> = ({
   const currentBatch = queryResult.batches.at(0)?.toArray();
   const tableHeader = columnNames.map((name) => {
     return (
-      <th class="border dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">
+      <th className="border dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">
         {name}
       </th>
     );
   });
 
-  const tableData = currentBatch.map((row) => {
+  const tableData = currentBatch?.map((row) => {
     // console.log(row.toJSON());
     return (
       <tr>
         {columnNames.map((columnName, idx) => {
           return (
             <td
-              class="border border-slate-100 dark:border-slate-700 p-4 pl-8 text-slate-500 dark:text-slate-400"
+              className="border border-slate-100 dark:border-slate-700 p-4 pl-8 text-slate-500 dark:text-slate-400"
               key={`${columnName}-${idx}`}
             >
               {row[columnName] ?? ""}
@@ -53,11 +53,11 @@ export const DataTable: FunctionComponent<DataTableProps> = ({
 
   return (
     <div>
-      <table class="border-collapse table-auto w-full text-sm">
+      <table className="border-collapse table-auto w-full text-sm">
         <thead>
           <tr>{tableHeader}</tr>
         </thead>
-        <tbody class="bg-white dark:bg-slate-800">{tableData}</tbody>
+        <tbody className="bg-white dark:bg-slate-800">{tableData}</tbody>
       </table>
     </div>
   );

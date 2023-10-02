@@ -1,14 +1,18 @@
 import { useDBConnection } from "@/hooks/useDBConnection";
 import { DuckDBDataProtocol } from "@duckdb/duckdb-wasm";
 import clsx from "clsx";
-import { h } from "preact";
 import { useDropzone } from "react-dropzone";
 
 export const FileUploader = () => {
   const { db, connection } = useDBConnection();
 
   const fileChangeHandler = async (files: File[]) => {
-    if (!files || !files?.[0]?.name?.endsWith(".parquet")) {
+    if (
+      !files ||
+      !files?.[0]?.name?.endsWith(".parquet") ||
+      !connection ||
+      !db
+    ) {
       return;
     }
     const [file] = files;

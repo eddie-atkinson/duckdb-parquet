@@ -1,12 +1,10 @@
-import { MutableRef, useState } from "preact/hooks";
-import { FileType, FileTypeSelector } from "./file-type-selector";
 import { Button } from "@/components/ui/button";
 import { useDBConnection } from "@/hooks/useDBConnection";
-import { FunctionComponent, Fragment } from "preact";
-import { h } from "preact";
+import { FunctionComponent, MutableRefObject, useState } from "react";
+import { FileType, FileTypeSelector } from "./file-type-selector";
 
 export interface DownloaderProps {
-  queryRef: MutableRef<HTMLInputElement | null>;
+  queryRef: MutableRefObject<HTMLInputElement | null>;
 }
 
 type CsvFile = `${string}.csv`;
@@ -56,13 +54,13 @@ export const Downloader: FunctionComponent<DownloaderProps> = ({
   const { db, loading, connection } = useDBConnection();
 
   const handleFileDownload = async () => {
-    if (!connection) {
+    if (!connection || !queryRef) {
       return;
     }
 
     const { fileName, query } = createExport(
       fileType,
-      queryRef.current?.value ?? ""
+      queryRef?.current?.value ?? ""
     );
 
     console.log(query);
@@ -76,7 +74,7 @@ export const Downloader: FunctionComponent<DownloaderProps> = ({
     }
   };
   return (
-    <Fragment>
+    <>
       <FileTypeSelector
         value={fileType}
         onChange={(v) => v && setFileType(v)}
@@ -84,6 +82,6 @@ export const Downloader: FunctionComponent<DownloaderProps> = ({
       <Button disabled={loading} onClick={handleFileDownload}>
         Download
       </Button>
-    </Fragment>
+    </>
   );
 };
