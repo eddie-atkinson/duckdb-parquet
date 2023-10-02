@@ -54,7 +54,7 @@ export const Downloader: FunctionComponent<DownloaderProps> = ({
   const { db, loading, connection } = useDBConnection();
 
   const handleFileDownload = async () => {
-    if (!connection || !queryRef) {
+    if (!connection || !queryRef?.current) {
       return;
     }
 
@@ -77,7 +77,9 @@ export const Downloader: FunctionComponent<DownloaderProps> = ({
     <>
       <FileTypeSelector
         value={fileType}
-        onChange={(v) => v && ["csv", "parquet"].includes(v) && setFileType(v)}
+        onChange={(v) =>
+          v && (v === "csv" || v === "parquet") && setFileType(v)
+        }
       />
       <Button disabled={loading} onClick={handleFileDownload}>
         Download

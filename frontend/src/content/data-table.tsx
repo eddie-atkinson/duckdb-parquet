@@ -1,10 +1,168 @@
 import * as arrow from "@apache-arrow/ts";
-import { FunctionComponent, Fragment } from "react";
+import { FunctionComponent, Fragment, useState, useRef, useMemo } from "react";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  ColumnDef,
+} from "@tanstack/react-table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export interface DataTableProps {
   queryResult: arrow.Table | null;
 }
 
+const getData = (batch: number, queryResult: arrow.Table) => {
+  return (
+    queryResult?.batches
+      ?.at(batch)
+      ?.toArray()
+      ?.map((r) => r.toJSON()) ?? []
+  );
+};
+
+const Table = ({
+  queryResult,
+  columns,
+  pageCount,
+}: {
+  queryResult: arrow.Table;
+  columns: ColumnDef<unknown, any>[];
+  pageCount: number;
+}) => {
+  console.log("rerendering");
+
+  // TODO: Changing size of query does not re-render current page so table size can be incorrect
+  const [data, setData] = useState(getData(0, queryResult));
+  const table = useReactTable({
+    data,
+    columns,
+    enableColumnResizing: true,
+    columnResizeMode: "onEnd",
+    manualPagination: true,
+    getCoreRowModel: getCoreRowModel(),
+    pageCount,
+  });
+
+  const setPage = (idx: number) => {
+    setData(getData(idx, queryResult));
+    table.setPageIndex(idx);
+  };
+
+  const currentPage = table.getState().pagination.pageIndex;
+  // Handle case where user reduces size of query set whilst we've loaded a greater number of pages
+  if (currentPage > pageCount) {
+    setPage(pageCount - 1);
+  }
+
+  return (
+    <>
+      <div className="h-2" />
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          className="rounded p-1"
+          onClick={() => table.setPageIndex(0)}
+          disabled={!table.getCanPreviousPage()}
+        >
+          {"<<"}
+        </Button>
+        <Button
+          className="rounded p-1"
+          variant="outline"
+          onClick={() => setPage(currentPage - 1)}
+          disabled={!table.getCanPreviousPage()}
+        >
+          {"<"}
+        </Button>
+        <Button
+          variant="outline"
+          className="rounded p-1"
+          onClick={() => setPage(currentPage + 1)}
+          disabled={!table.getCanNextPage()}
+        >
+          {">"}
+        </Button>
+        <Button
+          className="rounded p-1"
+          variant="outline"
+          onClick={() => setPage(pageCount - 1)}
+          disabled={!table.getCanNextPage()}
+        >
+          {">>"}
+        </Button>
+        <span className="flex items-center gap-1">
+          <div>Page</div>
+          <strong>
+            {currentPage + 1} of {table.getPageCount()}
+          </strong>
+        </span>
+        <span className="flex items-center gap-1">
+          | Go to page:
+          <Input
+            min={1}
+            max={table.getPageCount()}
+            type="number"
+            defaultValue={table.getState().pagination.pageIndex + 1}
+            onBlur={(e) => {
+              const page = e.target.value ? Number(e.target.value) - 1 : 0;
+              setPage(page);
+            }}
+            className="border p-1 rounded w-16"
+          />
+        </span>
+      </div>
+
+      <div className="p-2 block max-w-full overflow-x-scroll overflow-y-hidden">
+        <div className="h-2" />
+        <table className="w-full ">
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <th
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      className="border-2 p-2"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </th>
+                  );
+                })}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map((row) => {
+              return (
+                <tr key={row.id}>
+                  {row.getVisibleCells().map((cell) => {
+                    return (
+                      <td key={cell.id} className="border-2 p-2">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+};
 const getColumnNames = (queryResult: arrow.Table | null) => {
   if (!queryResult) {
     return [];
@@ -23,42 +181,20 @@ export const DataTable: FunctionComponent<DataTableProps> = ({
   }
 
   const columnNames = getColumnNames(queryResult);
-  // TODO: Add pagination options
-  const currentBatch = queryResult.batches.at(0)?.toArray();
-  const tableHeader = columnNames.map((name) => {
-    return (
-      <th className="border dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">
-        {name}
-      </th>
-    );
-  });
+  const pageCount = queryResult?.batches.length ?? 0;
+  const columnHelper = createColumnHelper<unknown>();
 
-  const tableData = currentBatch?.map((row) => {
-    // console.log(row.toJSON());
-    return (
-      <tr>
-        {columnNames.map((columnName, idx) => {
-          return (
-            <td
-              className="border border-slate-100 dark:border-slate-700 p-4 pl-8 text-slate-500 dark:text-slate-400"
-              key={`${columnName}-${idx}`}
-            >
-              {row[columnName] ?? ""}
-            </td>
-          );
-        })}
-      </tr>
-    );
-  });
+  const columns = columnNames.map((name) => columnHelper.accessor(name, {}));
 
   return (
     <div>
-      <table className="border-collapse table-auto w-full text-sm">
-        <thead>
-          <tr>{tableHeader}</tr>
-        </thead>
-        <tbody className="bg-white dark:bg-slate-800">{tableData}</tbody>
-      </table>
+      <Table
+        // TODO
+        // @ts-ignore
+        columns={columns}
+        queryResult={queryResult}
+        pageCount={pageCount}
+      />
     </div>
   );
 };

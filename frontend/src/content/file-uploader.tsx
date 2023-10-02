@@ -3,7 +3,10 @@ import { DuckDBDataProtocol } from "@duckdb/duckdb-wasm";
 import clsx from "clsx";
 import { useDropzone } from "react-dropzone";
 
-export const FileUploader = () => {
+interface FileUploaderProps {
+  onFileAccept?: () => void;
+}
+export const FileUploader: React.FC<FileUploaderProps> = ({ onFileAccept }) => {
   const { db, connection } = useDBConnection();
 
   const fileChangeHandler = async (files: File[]) => {
@@ -17,7 +20,6 @@ export const FileUploader = () => {
     }
     const [file] = files;
 
-    console.log(file.prototype);
     await db.registerFileHandle(
       file.name,
       file,
@@ -29,6 +31,7 @@ export const FileUploader = () => {
     await connection.query(
       `CREATE TABLE data AS SELECT * FROM read_parquet('${file.name}');`
     );
+    onFileAccept && onFileAccept();
   };
 
   const {
@@ -43,7 +46,7 @@ export const FileUploader = () => {
     onDragOver: undefined,
     onDragLeave: undefined,
     onDragEnter: undefined,
-    onDrop: fileChangeHandler,
+    onDropAccepted: fileChangeHandler,
   });
 
   const [acceptedFile] = acceptedFiles;

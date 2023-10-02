@@ -11,7 +11,6 @@ export const Content = () => {
   const { loading, connection } = useDBConnection();
 
   const [queryResult, setQueryResult] = useState<arrow.Table | null>(null);
-  const [currentPage] = useState<number>(0);
   const queryRef = useRef<null | HTMLInputElement>(null);
 
   if (loading) {
@@ -24,27 +23,27 @@ export const Content = () => {
     console.log(queryString);
 
     const result = await connection.query(queryString);
-    // @ts-ignore
     setQueryResult(result);
   };
 
-  const nPages = queryResult?.batches.length;
-  const nRows = queryResult?.numRows;
   console.log(queryResult);
 
   return (
     <div className="flex flex-col p-10 gap-2">
       <form onSubmit={onQuery}>
         <div className="flex justify-center space-x-2">
-          <Input type="text" name="query" className="input" ref={queryRef} />
+          <Input
+            type="text"
+            name="query"
+            className="input"
+            ref={queryRef}
+            defaultValue="SELECT * FROM data LIMIT 50;"
+          />
           <Button type="submit">Query</Button>
           <Downloader queryRef={queryRef} />
         </div>
       </form>
-      <FileUploader />
-      <div>
-        N pages of results: {nPages} <hr /> N rows: {nRows}
-      </div>
+      <FileUploader onFileAccept={() => queryRef.current?.focus()} />
       <DataTable queryResult={queryResult} />
     </div>
   );
