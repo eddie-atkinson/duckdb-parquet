@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import * as arrow from "@apache-arrow/ts";
 import {
-  ColumnDef,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
@@ -14,7 +13,10 @@ import { useDebouncedCallback } from "use-debounce";
 export interface DataTableProps {
   queryResult: arrow.Table | null;
 }
-const getData = (batch: number, queryResult: arrow.Table) => {
+const getData = (
+  batch: number,
+  queryResult: arrow.Table
+): { [x: string]: unknown }[] => {
   return (
     queryResult?.batches
       ?.at(batch)
@@ -23,15 +25,13 @@ const getData = (batch: number, queryResult: arrow.Table) => {
   );
 };
 
-const Table = ({
-  queryResult,
-  columns,
-  pageCount,
-}: {
-  queryResult: arrow.Table;
-  columns: ColumnDef<unknown, any>[];
-  pageCount: number;
-}) => {
+const Table = ({ queryResult }: { queryResult: arrow.Table }) => {
+  const columnNames = getColumnNames(queryResult);
+  const pageCount = queryResult?.batches.length ?? 0;
+  const columnHelper = createColumnHelper<unknown>();
+
+  const columns = columnNames.map((name) => columnHelper.accessor(name, {}));
+
   const [data, setData] = useState(getData(0, queryResult));
 
   const debouncedoOnPageChange = useDebouncedCallback(
@@ -47,7 +47,7 @@ const Table = ({
     setData(getData(0, queryResult));
   }, [queryResult]);
 
-  const table = useReactTable({
+  const table = useReactTable<unknown>({
     data,
     columns,
     enableColumnResizing: true,
@@ -189,21 +189,9 @@ export const DataTable = ({ queryResult }: DataTableProps) => {
     return <Fragment>Nada to see 👀</Fragment>;
   }
 
-  const columnNames = getColumnNames(queryResult);
-  const pageCount = queryResult?.batches.length ?? 0;
-  const columnHelper = createColumnHelper<unknown>();
-
-  const columns = columnNames.map((name) => columnHelper.accessor(name, {}));
-
   return (
     <div>
-      <Table
-        // TODO
-        // @ts-ignore
-        columns={columns}
-        queryResult={queryResult}
-        pageCount={pageCount}
-      />
+      <Table queryResult={queryResult} />
     </div>
   );
 };
