@@ -28,6 +28,11 @@ export const Content = () => {
 
   console.log(queryResult);
 
+  const onFileAccept = () => {
+    setQueryResult(null);
+    queryRef.current?.focus();
+  };
+
   return (
     <div className="flex flex-col p-10 gap-2">
       <form onSubmit={onQuery}>
@@ -43,7 +48,7 @@ export const Content = () => {
           <Downloader queryRef={queryRef} />
         </div>
       </form>
-      <FileUploader onFileAccept={() => queryRef.current?.focus()} />
+      <FileUploader onFileAccept={onFileAccept} />
       <DataTable queryResult={queryResult} />
     </div>
   );

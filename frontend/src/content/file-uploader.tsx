@@ -1,6 +1,7 @@
 import { useDBConnection } from "@/hooks/useDBConnection";
 import { DuckDBDataProtocol } from "@duckdb/duckdb-wasm";
 import clsx from "clsx";
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 interface FileUploaderProps {
@@ -8,6 +9,10 @@ interface FileUploaderProps {
 }
 export const FileUploader: React.FC<FileUploaderProps> = ({ onFileAccept }) => {
   const { db, connection } = useDBConnection();
+  // We could use the acceptedFiles array provided by the useDropzone hook
+  // but if the user hits the upload button the acceptedFile is cleared whether they select
+  // another file or not. It's easier to just keep track ourselves
+  const [acceptedFileName, setAcceptedFileName] = useState<string | null>(null);
 
   const fileChangeHandler = async (files: File[]) => {
     if (
@@ -31,11 +36,11 @@ export const FileUploader: React.FC<FileUploaderProps> = ({ onFileAccept }) => {
     await connection.query(
       `CREATE TABLE data AS SELECT * FROM read_parquet('${file.name}');`
     );
+    setAcceptedFileName(file.name);
     onFileAccept && onFileAccept();
   };
 
   const {
-    acceptedFiles,
     getRootProps,
     getInputProps,
 
@@ -48,8 +53,6 @@ export const FileUploader: React.FC<FileUploaderProps> = ({ onFileAccept }) => {
     onDragEnter: undefined,
     onDropAccepted: fileChangeHandler,
   });
-
-  const [acceptedFile] = acceptedFiles;
 
   return (
     <div
@@ -70,7 +73,9 @@ export const FileUploader: React.FC<FileUploaderProps> = ({ onFileAccept }) => {
       <input {...getInputProps()} type="file" />
 
       <p>
-        {!!acceptedFile ? acceptedFile.name : "Drag n' drop or select a file"}
+        {!!acceptedFileName
+          ? acceptedFileName
+          : "Drag n' drop or select a file"}
       </p>
       <br />
     </div>
