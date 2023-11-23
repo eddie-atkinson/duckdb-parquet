@@ -9,6 +9,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { Fragment, useEffect, useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
 
 export interface DataTableProps {
   queryResult: arrow.Table | null;
@@ -31,8 +32,16 @@ const Table = ({
   columns: ColumnDef<unknown, any>[];
   pageCount: number;
 }) => {
-  // TODO: Changing size of query does not re-render current page so table size can be incorrect
   const [data, setData] = useState(getData(0, queryResult));
+
+  const debouncedoOnPageChange = useDebouncedCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const page = e.target.value ? Number(e.target.value) - 1 : 0;
+      const clampedPage = Math.min(Math.max(0, page), pageCount - 1);
+      setPage(clampedPage);
+    },
+    500
+  );
 
   useEffect(() => {
     setData(getData(0, queryResult));
@@ -108,10 +117,7 @@ const Table = ({
             max={table.getPageCount()}
             type="number"
             defaultValue={table.getState().pagination.pageIndex + 1}
-            onBlur={(e) => {
-              const page = e.target.value ? Number(e.target.value) - 1 : 0;
-              setPage(page);
-            }}
+            onChange={debouncedoOnPageChange}
             className="border p-1 rounded w-16"
           />
         </span>
@@ -167,6 +173,7 @@ const Table = ({
     </>
   );
 };
+
 const getColumnNames = (queryResult: arrow.Table | null) => {
   if (!queryResult) {
     return [];
