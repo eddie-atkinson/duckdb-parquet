@@ -8,12 +8,11 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Fragment, FunctionComponent, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 
 export interface DataTableProps {
   queryResult: arrow.Table | null;
 }
-
 const getData = (batch: number, queryResult: arrow.Table) => {
   return (
     queryResult?.batches
@@ -32,10 +31,13 @@ const Table = ({
   columns: ColumnDef<unknown, any>[];
   pageCount: number;
 }) => {
-  console.log("rerendering");
-
   // TODO: Changing size of query does not re-render current page so table size can be incorrect
   const [data, setData] = useState(getData(0, queryResult));
+
+  useEffect(() => {
+    setData(getData(0, queryResult));
+  }, [queryResult]);
+
   const table = useReactTable({
     data,
     columns,
@@ -119,26 +121,28 @@ const Table = ({
         <div className="h-2" />
         <table className="w-full ">
           <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <th
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      className="border-2 p-2"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </th>
-                  );
-                })}
-              </tr>
-            ))}
+            {table.getHeaderGroups().map((headerGroup) => {
+              return (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <th
+                        key={header.id}
+                        colSpan={header.colSpan}
+                        className="border-2 p-2"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </th>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => {
@@ -173,9 +177,7 @@ const getColumnNames = (queryResult: arrow.Table | null) => {
   });
 };
 
-export const DataTable: FunctionComponent<DataTableProps> = ({
-  queryResult,
-}) => {
+export const DataTable = ({ queryResult }: DataTableProps) => {
   if (!queryResult) {
     return <Fragment>Nada to see 👀</Fragment>;
   }
