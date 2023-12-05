@@ -26,8 +26,6 @@ export const Content = () => {
     setQueryResult(result);
   };
 
-  console.log(queryResult);
-
   const onFileAccept = () => {
     setQueryResult(null);
     queryRef.current?.focus();

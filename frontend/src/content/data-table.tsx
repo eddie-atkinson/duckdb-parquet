@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import * as arrow from "@apache-arrow/ts";
+
 import {
   createColumnHelper,
   flexRender,
@@ -26,12 +27,13 @@ const getData = (
 };
 
 const Table = ({ queryResult }: { queryResult: arrow.Table }) => {
-  const columnNames = getColumnNames(queryResult);
+  const columnInfo = getColumnInfo(queryResult);
   const pageCount = queryResult?.batches.length ?? 0;
   const columnHelper = createColumnHelper<unknown>();
 
-  const columns = columnNames.map((name) => columnHelper.accessor(name, {}));
-
+  const columns = columnInfo.map(({ name, renderFn }) =>
+    columnHelper.accessor(name, { cell: (v) => renderFn(v.getValue()) })
+  );
   const [data, setData] = useState(getData(0, queryResult));
 
   const debouncedoOnPageChange = useDebouncedCallback(
@@ -174,14 +176,125 @@ const Table = ({ queryResult }: { queryResult: arrow.Table }) => {
   );
 };
 
-const getColumnNames = (queryResult: arrow.Table | null) => {
-  if (!queryResult) {
-    return [];
+type RenderFn = (v: unknown) => string | number;
+
+const requiresSpecialRenderFn = (field: arrow.Field<any>) => {};
+
+const SCALAR_TYPES = [
+  arrow.Type.Int,
+  arrow.Type.Float,
+  arrow.Type.Binary,
+  arrow.Type.Utf8,
+  arrow.Type.Bool,
+  arrow.Type.Decimal,
+  arrow.Type.FixedSizeBinary,
+  arrow.Type.Date,
+  arrow.Type.Time,
+  arrow.Type.Timestamp,
+  arrow.Type.Interval,
+  arrow.Type.FixedSizeBinary,
+];
+const NULL_TYPES = [arrow.Type.NONE, arrow.Type.Null];
+const COMPLEX_TYPES = [
+  arrow.Type.List,
+  arrow.Type.Struct,
+  arrow.Type.Union,
+  arrow.Type.FixedSizeList,
+  arrow.Type.Map,
+];
+
+type ScalarType =
+  | arrow.Field<arrow.Int>
+  | arrow.Field<arrow.Float>
+  | arrow.Field<arrow.Binary>
+  | arrow.Field<arrow.Utf8>
+  | arrow.Field<arrow.Bool>
+  | arrow.Field<arrow.Decimal>
+  | arrow.Field<arrow.FixedSizeBinary>
+  | arrow.Field<arrow.Date_>
+  | arrow.Field<arrow.Time>
+  | arrow.Field<arrow.Timestamp>
+  | arrow.Field<arrow.Interval>
+  | arrow.Field<arrow.FixedSizeBinary>;
+
+const isScalar = (field: arrow.Field<any>): field is ScalarType => {
+  return SCALAR_TYPES.includes(field.typeId);
+};
+const isNull = (field: arrow.Field<any>) => {
+  return arrow.DataType.isNull(field);
+};
+
+const isComplex = (field: arrow.Field<any>) => {
+  return COMPLEX_TYPES.includes(field.typeId);
+};
+
+const passThroughFn: RenderFn = (v: unknown) => v;
+
+const getRenderDateFn = (field: arrow.Date_<any>) => {
+  return passThroughFn;
+};
+
+const validationFunctions = {
+  int: arrow.DataType.isInt,
+  float: arrow.DataType.isFloat,
+  binary: arrow.DataType.isBinary,
+  bool: arrow.DataType.isBool,
+  decimal: arrow.DataType.isDecimal,
+  "dense union": arrow.DataType.isDenseUnion,
+  dict: arrow.DataType.isDictionary,
+  "fixed binary": arrow.DataType.isFixedSizeBinary,
+  "fixed list": arrow.DataType.isFixedSizeList,
+  interval: arrow.DataType.isInterval,
+  list: arrow.DataType.isList,
+  map: arrow.DataType.isMap,
+  isNull: arrow.DataType.isNull,
+  sparseUnion: arrow.DataType.isSparseUnion,
+  struct: arrow.DataType.isStruct,
+  time: arrow.DataType.isTime,
+  timestamp: arrow.DataType.isTimestamp,
+  union: arrow.DataType.isUnion,
+  utf8: arrow.DataType.isUtf8,
+};
+
+const getScalarRenderFn = (field: ScalarType): RenderFn => {
+  if (arrow.DataType.isDate(field)) {
+    return getRenderDateFn(field);
   }
-  return queryResult.schema.fields.map((field) => {
-    console.log(`${field.type}: ${field.typeId}`);
-    return field.name;
-  });
+  if (arrow.DataType.isTimestamp(field)) {
+    return (v) => new Date(v).toISOString();
+  }
+  if (field.name === "foo") {
+    console.log(field);
+    Object.entries(validationFunctions).forEach(([name, fn]) => {
+      if (fn(field)) {
+        console.log(`${name} for ${field.name} = ${fn(field)}`);
+      }
+    });
+  }
+
+  return passThroughFn;
+};
+
+const getRenderFn = (field: arrow.Field<any>): RenderFn => {
+  if (isScalar(field)) {
+    return getScalarRenderFn(field);
+  }
+
+  return passThroughFn;
+};
+
+const getColumnInfo = (queryResult: arrow.Table | null) => {
+  return (
+    queryResult?.schema?.fields?.map((field) => {
+      const { name, typeId, type } = field;
+      const renderFn = getRenderFn(field);
+
+      // if (typeId === arrow.Type.Timestamp) {
+      //   // console.log(type);
+      // }
+      return { name, typeId, renderFn };
+    }) ?? []
+  );
 };
 
 export const DataTable = ({ queryResult }: DataTableProps) => {
